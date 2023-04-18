@@ -1,24 +1,60 @@
 import { Injectable } from '@nestjs/common';
-import { Todo } from './todo.model';
-import { UUID, randomUUID } from 'crypto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Todo } from 'src/schemas/todo.schema';
 
 @Injectable()
 export class TodosService {
-  todos: Todo[] = [];
+  constructor(@InjectModel(Todo.name) private todoModel: Model<Todo>) {}
 
-  getTodos() {
-    return [...this.todos];
+  async getTodos(): Promise<Todo[]> {
+    return await this.todoModel.find().exec();
   }
 
-  getTodo(id: UUID) {
-    return this.todos.find((todo) => todo.id === id);
+  async getTodo(id: string): Promise<Todo> {
+    return await this.todoModel.findById(id).exec();
   }
 
-  insertTodo(title: string, content: string, priority: number) {
-    const newId = randomUUID();
-    const newTodo = new Todo(newId, title, content, priority);
-    this.todos.push(newTodo);
+  async insertTodo(
+    title: string,
+    content: string,
+    priority: number,
+  ): Promise<Todo> {
+    const createdTodo = new this.todoModel({
+      title,
+      content,
+      priority,
+    });
 
-    return newId;
+    return await createdTodo.save();
+  }
+
+  async updateTodo(
+    id: string,
+    title: string,
+    content: string,
+    priority: number,
+  ): Promise<Todo> {
+    const updatedTodo = await this.todoModel.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          title,
+          content,
+          priority,
+        },
+      },
+      { new: true },
+    );
+
+    return updatedTodo;
+  }
+
+  async deleteTodo(id: string) {
+    const deletedTodo = await this.todoModel.deleteOne({
+      _id: id,
+    });
+
+    return deletedTodo;
   }
 }

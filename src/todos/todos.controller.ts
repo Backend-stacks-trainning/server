@@ -1,4 +1,12 @@
-import { Body, Controller, Post, Get, Param } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  Param,
+  Delete,
+  Put,
+} from '@nestjs/common';
 import { TodosService } from './todos.service';
 import { UUID } from 'crypto';
 
@@ -22,11 +30,32 @@ export class TodosController {
     @Body('content') todoContent: string,
     @Body('priority') todoPriority: number,
   ) {
-    const generatedId = this.todosService.insertTodo(
+    const generatedTodo = this.todosService.insertTodo(
       todoTitle,
       todoContent,
       todoPriority,
     );
-    return { id: generatedId };
+
+    return generatedTodo;
+  }
+
+  @Put(':id')
+  updateTodo(
+    @Param('id') id: string,
+    @Body('title') todoTitle: string,
+    @Body('content') todoContent: string,
+    @Body('priority') todoPriority: number,
+  ) {
+    return this.todosService.updateTodo(
+      id,
+      todoTitle,
+      todoContent,
+      todoPriority,
+    );
+  }
+
+  @Delete(':id')
+  removeTodo(@Param('id') id: string) {
+    return this.todosService.deleteTodo(id);
   }
 }
