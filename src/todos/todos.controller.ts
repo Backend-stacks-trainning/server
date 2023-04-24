@@ -25,16 +25,20 @@ export class TodosController {
   }
 
   @Post()
-  addTodo(
+  async addTodo(
     @Body('title') todoTitle: string,
     @Body('content') todoContent: string,
     @Body('priority') todoPriority: number,
   ) {
-    const generatedTodo = this.todosService.insertTodo(
+    // Send new todo to mongodb
+    const generatedTodo = await this.todosService.insertTodo(
       todoTitle,
       todoContent,
       todoPriority,
     );
+
+    // Send todo to worker
+    this.todosService.sendCreatedTodoToWorker(generatedTodo);
 
     return generatedTodo;
   }

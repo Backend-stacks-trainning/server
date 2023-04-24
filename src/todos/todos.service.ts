@@ -1,3 +1,4 @@
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -5,7 +6,10 @@ import { Todo } from 'src/schemas/todo.schema';
 
 @Injectable()
 export class TodosService {
-  constructor(@InjectModel(Todo.name) private todoModel: Model<Todo>) {}
+  constructor(
+    @InjectModel(Todo.name) private todoModel: Model<Todo>,
+    private readonly rmqService: AmqpConnection,
+  ) {}
 
   async getTodos(): Promise<Todo[]> {
     return await this.todoModel.find().exec();
@@ -27,6 +31,12 @@ export class TodosService {
     });
 
     return await createdTodo.save();
+  }
+
+  sendCreatedTodoToWorker(todo: Todo): void {
+    this.rmqService.publish('exchange1', 'todo_created', todo);
+
+    console.log('Send created Todo to worker successfully');
   }
 
   async updateTodo(
