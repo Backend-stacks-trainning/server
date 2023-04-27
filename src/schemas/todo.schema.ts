@@ -9,10 +9,7 @@ export class Todo {
   title: string;
 
   @Prop()
-  content: string;
-
-  @Prop()
-  priority: number;
+  timestamp: Date;
 }
 
 export const TodoSchema = SchemaFactory.createForClass(Todo);

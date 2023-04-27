@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TodosController } from './todos.controller';
 import { TodosService } from './todos.service';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ElasticsearchModule } from '@nestjs/elasticsearch';
 import { Todo, TodoSchema } from 'src/schemas/todo.schema';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 
@@ -17,6 +18,17 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
       ],
       uri: 'amqp://localhost:5672',
       connectionInitOptions: { wait: false },
+    }),
+    ElasticsearchModule.registerAsync({
+      useFactory: async () => ({
+        cloud: {
+          id: 'tuannt02-elasticsearch:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvOjQ0MyQ5YWY5NTExYmY2YTQ0MzdlOGU2YWUzODBjNTc1YTE0OSRmM2ZiNjNmZDJmZmY0NGEyYjJiMjE2YTEyMjE2Y2FmYQ==',
+        },
+        auth: {
+          username: 'elastic',
+          password: '6mGdrrDqKUBMCysKeu61xaby',
+        },
+      }),
     }),
   ],
   controllers: [TodosController],

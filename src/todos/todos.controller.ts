@@ -4,6 +4,7 @@ import {
   Post,
   Get,
   Param,
+  Query,
   Delete,
   Put,
 } from '@nestjs/common';
@@ -19,6 +20,11 @@ export class TodosController {
     return this.todosService.getTodos();
   }
 
+  @Get('search')
+  search(@Query('keyword') keyword: string) {
+    return this.todosService.searchTodo(keyword);
+  }
+
   @Get(':id')
   getSingleTodo(@Param('id') id: UUID) {
     return this.todosService.getTodo(id);
@@ -27,35 +33,30 @@ export class TodosController {
   @Post()
   async addTodo(
     @Body('title') todoTitle: string,
-    @Body('content') todoContent: string,
-    @Body('priority') todoPriority: number,
+    @Body('timestamp') todoTimestamp: Date,
   ) {
+    if (!todoTimestamp) {
+      todoTimestamp = new Date();
+    }
+
     // Send new todo to mongodb
     const generatedTodo = await this.todosService.insertTodo(
       todoTitle,
-      todoContent,
-      todoPriority,
+      todoTimestamp,
     );
 
     // Send todo to worker
-    this.todosService.sendCreatedTodoToWorker(generatedTodo);
+    this.todosService.sendCreatedTodoToWorker({
+      title: todoTitle,
+      timestamp: todoTimestamp,
+    });
 
     return generatedTodo;
   }
 
   @Put(':id')
-  updateTodo(
-    @Param('id') id: string,
-    @Body('title') todoTitle: string,
-    @Body('content') todoContent: string,
-    @Body('priority') todoPriority: number,
-  ) {
-    return this.todosService.updateTodo(
-      id,
-      todoTitle,
-      todoContent,
-      todoPriority,
-    );
+  updateTodo(@Param('id') id: string, @Body('title') todoTitle: string) {
+    return this.todosService.updateTodo(id, todoTitle);
   }
 
   @Delete(':id')
