@@ -7,13 +7,20 @@ import {
   Query,
   Delete,
   Put,
+  UseInterceptors,
+  Inject,
 } from '@nestjs/common';
 import { TodosService } from './todos.service';
 import { UUID } from 'crypto';
+import { CacheInterceptor, CACHE_MANAGER } from '@nestjs/cache-manager/dist';
+import { Cache } from 'cache-manager';
 
 @Controller('todo')
 export class TodosController {
-  constructor(private readonly todosService: TodosService) {}
+  constructor(
+    private readonly todosService: TodosService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   @Get()
   getAllTodos() {
@@ -21,6 +28,7 @@ export class TodosController {
   }
 
   @Get('search')
+  @UseInterceptors(CacheInterceptor)
   search(@Query('keyword') keyword: string) {
     return this.todosService.searchTodo(keyword);
   }
@@ -56,6 +64,9 @@ export class TodosController {
 
   @Put(':id')
   updateTodo(@Param('id') id: string, @Body('title') todoTitle: string) {
+    // Clear all cache
+    this.cacheManager.reset();
+
     return this.todosService.updateTodo(id, todoTitle);
   }
 

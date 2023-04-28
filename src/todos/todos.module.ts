@@ -5,6 +5,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
 import { Todo, TodoSchema } from 'src/schemas/todo.schema';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { CacheModule } from '@nestjs/cache-manager';
+import * as redisStore from 'cache-manager-redis-store';
 
 @Module({
   imports: [
@@ -28,6 +30,14 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
           username: 'elastic',
           password: '6mGdrrDqKUBMCysKeu61xaby',
         },
+      }),
+    }),
+    CacheModule.registerAsync({
+      useFactory: async () => ({
+        store: redisStore,
+        host: 'localhost',
+        port: 6379,
+        ttl: 20,
       }),
     }),
   ],
