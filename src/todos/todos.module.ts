@@ -7,36 +7,45 @@ import { Todo, TodoSchema } from 'src/schemas/todo.schema';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { CacheModule } from '@nestjs/cache-manager';
 import * as redisStore from 'cache-manager-redis-store';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Todo.name, schema: TodoSchema }]),
-    RabbitMQModule.forRoot(RabbitMQModule, {
-      exchanges: [
-        {
-          name: 'exchange1',
-          type: 'topic',
-        },
-      ],
-      uri: 'amqp://localhost:5672',
-      connectionInitOptions: { wait: false },
+    RabbitMQModule.forRootAsync(RabbitMQModule, {
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        exchanges: [
+          {
+            name: 'exchange1',
+            type: 'topic',
+          },
+        ],
+        uri: configService.get<string>('RABBITMQ_URI'),
+        connectionInitOptions: { wait: false },
+      }),
     }),
     ElasticsearchModule.registerAsync({
-      useFactory: async () => ({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
         cloud: {
-          id: 'tuannt02-elasticsearch:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvOjQ0MyQ5YWY5NTExYmY2YTQ0MzdlOGU2YWUzODBjNTc1YTE0OSRmM2ZiNjNmZDJmZmY0NGEyYjJiMjE2YTEyMjE2Y2FmYQ==',
+          id: configService.get<string>('ES_CLOUD_ID'),
         },
         auth: {
-          username: 'elastic',
-          password: '6mGdrrDqKUBMCysKeu61xaby',
+          username: configService.get<string>('ES_AUTH_USERNAME'),
+          password: configService.get<string>('ES_AUTH_PASSWORD'),
         },
       }),
     }),
     CacheModule.registerAsync({
-      useFactory: async () => ({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
         store: redisStore,
-        host: 'localhost',
-        port: 6379,
+        host: configService.get<string>('REDIS_HOST'),
+        port: configService.get<number>('REDIS_PORT'),
         ttl: 20,
       }),
     }),
