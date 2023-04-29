@@ -1,14 +1,11 @@
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Todo } from 'src/schemas/todo.schema';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-
-interface ISendEvent {
-  msg: string;
-  data: object | string;
-}
+import { Document, isValidObjectId } from 'mongoose';
+import { ISendEvent, ITodo, JsonRespond } from '../utils/interface';
 
 @Injectable()
 export class TodosService {
@@ -20,6 +17,24 @@ export class TodosService {
 
   async getTodos(): Promise<Todo[]> {
     return await this.todoModel.find().exec();
+  }
+
+  async checkTodoExist(id: string): Promise<boolean> {
+    // Check id valid
+    const idValid = isValidObjectId(id);
+    if (!idValid) {
+      throw new HttpException(
+        <JsonRespond>{
+          statusCode: 400,
+          message: 'Fail to get',
+          error: 'ID INVALID',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const result = await this.todoModel.findById(id).exec();
+    return !!result;
   }
 
   async getTodo(id: string): Promise<Todo> {
@@ -72,16 +87,19 @@ export class TodosService {
     }));
   }
 
-  async insertTodo(title: string, timestamp: Date): Promise<Todo> {
-    const createdTodo = new this.todoModel({
+  async insertTodo(
+    title: string,
+    timestamp: Date,
+  ): Promise<Document<unknown, unknown, Todo>> {
+    const createdTodo = await new this.todoModel({
       title,
       timestamp,
-    });
+    }).save();
 
-    return await createdTodo.save();
+    return createdTodo;
   }
 
-  sendCreatedTodoToWorker(todo: Todo): void {
+  sendCreatedTodoToWorker(todo: ITodo): void {
     const payload: ISendEvent = {
       msg: 'TODO_CREATED',
       data: todo,
@@ -90,6 +108,28 @@ export class TodosService {
     this.rmqService.publish('exchange1', 'todo_created', payload);
 
     console.log('Send created Todo to worker successfully');
+  }
+
+  sendUpdatedTodoToWorker(todo: ITodo): void {
+    const payload: ISendEvent = {
+      msg: 'TODO_UPDATED',
+      data: todo,
+    };
+
+    this.rmqService.publish('exchange1', 'todo_updated', payload);
+
+    console.log('Send updated Todo to worker successfully');
+  }
+
+  sendDeletedTodoToWorker(todo: ITodo): void {
+    const payload: ISendEvent = {
+      msg: 'TODO_DELETED',
+      data: todo,
+    };
+
+    this.rmqService.publish('exchange1', 'todo_deleted', payload);
+
+    console.log('Send deleted Todo to worker successfully');
   }
 
   async updateTodo(id: string, title: string): Promise<Todo> {
