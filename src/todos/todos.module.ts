@@ -30,13 +30,15 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        cloud: {
-          id: configService.get<string>('ES_CLOUD_ID'),
-        },
-        auth: {
-          username: configService.get<string>('ES_AUTH_USERNAME'),
-          password: configService.get<string>('ES_AUTH_PASSWORD'),
-        },
+        node: configService.get<string>('ES_URL'),
+        // ! TEMPORARY SOLUTION
+        // cloud: {
+        //   id: configService.get<string>('ES_CLOUD_ID'),
+        // },
+        // auth: {
+        //   username: configService.get<string>('ES_AUTH_USERNAME'),
+        //   password: configService.get<string>('ES_AUTH_PASSWORD'),
+        // },
       }),
     }),
     CacheModule.registerAsync({

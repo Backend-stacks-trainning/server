@@ -1,0 +1,76 @@
+version: '3'
+
+services:
+  server:
+    container_name: server
+    image: server:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    depends_on:
+      - rabbitmq
+      - elasticsearch
+      - redis
+      - mongodb
+    environment:
+      - ES_URL=http://elasticsearch:9200
+      - ES_CLOUD_ID=tuannt02-elasticsearch:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvOjQ0MyQ5YWY5NTExYmY2YTQ0MzdlOGU2YWUzODBjNTc1YTE0OSRmM2ZiNjNmZDJmZmY0NGEyYjJiMjE2YTEyMjE2Y2FmYQ==
+      - ES_AUTH_USERNAME=elastic
+      - ES_AUTH_PASSWORD=6mGdrrDqKUBMCysKeu61xaby
+      - RABBITMQ_URI=amqp://rabbitmq:5672
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_URL=mongodb://mongodb:27017/todo
+
+  worker:
+    container_name: worker
+    image: worker:latest
+    build:
+      context: ../worker
+      dockerfile: Dockerfile
+    ports:
+      - '3001:3001'
+    depends_on:
+      - rabbitmq
+    environment:
+      - ES_CLOUD_ID=tuannt02-elasticsearch:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvOjQ0MyQ5YWY5NTExYmY2YTQ0MzdlOGU2YWUzODBjNTc1YTE0OSRmM2ZiNjNmZDJmZmY0NGEyYjJiMjE2YTEyMjE2Y2FmYQ==
+      - ES_AUTH_USERNAME=elastic
+      - ES_AUTH_PASSWORD=6mGdrrDqKUBMCysKeu61xaby
+      - RABBITMQ_URI=amqp://rabbitmq:5672
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.9-management
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    # environment:
+    #   - RABBITMQ_DEFAULT_USER=guest
+    #   - RABBITMQ_DEFAULT_PASS=guest
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.13.2
+    ports:
+      - '9200:9200'
+    deploy:
+      resources:
+        limits:
+          memory: '4g'
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    ports:
+      - '6379:6379'
+
+  mongodb:
+    container_name: mongodb
+    image: mongo:4.4.5
+    ports:
+      - '27017:27017'
+    # environment:
+    #   - MONGO_INITDB_ROOT_USERNAME=root
+    #   - MONGO_INITDB_ROOT_PASSWORD=example
