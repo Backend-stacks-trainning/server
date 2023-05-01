@@ -6,9 +6,11 @@ WORKDIR /app
 
 # copy package.json and package-lock.json
 COPY package*.json ./
+COPY tsconfig.build.json ./
 
 # install dependencies
 RUN npm install
+RUN npm run build
 
 # copy app source code
 COPY . .

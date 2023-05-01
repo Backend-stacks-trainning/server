@@ -23,6 +23,8 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MONGODB_URL=mongodb://mongodb:27017/todo
+    # volumes:
+    #   - .:/usr/src/app
 
   worker:
     container_name: worker
@@ -34,11 +36,15 @@ services:
       - '3001:3001'
     depends_on:
       - rabbitmq
+      - elasticsearch
     environment:
+      - ES_URL=http://elasticsearch:9200
       - ES_CLOUD_ID=tuannt02-elasticsearch:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvOjQ0MyQ5YWY5NTExYmY2YTQ0MzdlOGU2YWUzODBjNTc1YTE0OSRmM2ZiNjNmZDJmZmY0NGEyYjJiMjE2YTEyMjE2Y2FmYQ==
       - ES_AUTH_USERNAME=elastic
       - ES_AUTH_PASSWORD=6mGdrrDqKUBMCysKeu61xaby
       - RABBITMQ_URI=amqp://rabbitmq:5672
+    # volumes:
+    # - .:/usr/src/app
 
   rabbitmq:
     container_name: rabbitmq
@@ -46,13 +52,16 @@ services:
     ports:
       - '5672:5672'
       - '15672:15672'
-    # environment:
-    #   - RABBITMQ_DEFAULT_USER=guest
-    #   - RABBITMQ_DEFAULT_PASS=guest
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
 
   elasticsearch:
     container_name: elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:7.13.2
+    environment:
+      - xpack.security.enabled=false
+      - "discovery.type=single-node"
     ports:
       - '9200:9200'
     deploy:
